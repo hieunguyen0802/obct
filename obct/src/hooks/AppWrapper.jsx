@@ -5,7 +5,7 @@ const AppWrapper = ({ children }) => {
   return (
     <Box
       sx={{
-        maxWidth: "1250px", // Maximum width for a 24-inch monitor
+        maxWidth: "1920px", // Maximum width for a 24-inch monitor
         margin: "0 auto", // Center content horizontally
         width: "100%", // Allow responsiveness
       }}

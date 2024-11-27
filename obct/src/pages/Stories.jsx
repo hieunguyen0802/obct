@@ -1,59 +1,15 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Fade,
-  FormControl,
-  Grid,
-  ImageList,
-  ImageListItem,
-  InputLabel,
-  List,
-  ListItem,
-  ListItemText,
-  MenuItem,
-  Select,
-  TextField,
-  Typography,
-} from "@mui/material";
 import React, { useState } from "react";
+import { Box, Button, Grid, ListItem, ListItemText, Typography, TextField, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import HeroImage from "../components/HeroImage";
 import birthdayWgrandpa from "../asset/images/birthdayWgrandpa.jpg";
 import SectionDivider from "../components/SectionDivider";
+import { Link } from "react-router-dom";
 
 const Stories = () => {
-  const [storyName, setStoryName] = useState("");
-  const [tellerName, setTellerName] = useState("");
-  const [storyCategory, setStoryCategory] = useState("");
-  const [storyText, setStoryText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(false);
-  const [formKey, setFormKey] = useState(0); // Used to trigger form reset with splash effect
   const [viewMore, setViewMore] = useState(false);
 
-  const categories = ["Adventure", "Drama", "Fantasy", "Mystery", "Romance"];
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    // Simulate an API call
-    setTimeout(() => {
-      setLoading(false);
-      setSuccessMessage(true);
-      setFormKey((prevKey) => prevKey + 1); // Reset form with splash effect
-      setStoryName("");
-      setTellerName("");
-      setStoryCategory("");
-      setStoryText("");
-
-      // Hide success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage(false);
-      }, 3000); // 3 seconds delay
-    }, 2000); // Simulating 2s API delay
-  };
+  const [searchQuery, setSearchQuery] = useState(""); // Search query state
+  const [selectedCategory, setSelectedCategory] = useState(""); // Selected category state
 
   const toldStories = [
     {
@@ -98,140 +54,37 @@ const Stories = () => {
     },
   ];
 
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [filteredStories, setFilteredStories] = useState(toldStories);
-
-   // Handle changes in search box
-   const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    filterStories(e.target.value, selectedCategory);
-  };
-
-  // Handle changes in category dropdown
-  const handleCategoryChange = (e) => {
-    setSelectedCategory(e.target.value);
-    filterStories(search, e.target.value);
-  };
-
-  // Filter stories by search or category
-  const filterStories = (searchValue, categoryValue) => {
-    let filtered = toldStories;
-
-    // Filter by search text
-    if (searchValue) {
-      filtered = filtered.filter((story) =>
-        story.title.toLowerCase().includes(searchValue.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (categoryValue) {
-      filtered = filtered.filter((story) => story.category === categoryValue);
-    }
-
-    setFilteredStories(filtered);
-  };
-
+  // Handle View More functionality
   const handleViewMore = () => {
     setViewMore(!viewMore);
   };
 
+  // Handle Search functionality
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle Category Change functionality
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+  };
+
+  // Filter stories based on search query and selected category
+  const filteredStories = toldStories.filter((story) => {
+    const matchesSearchQuery = story.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory ? story.category === selectedCategory : true;
+    return matchesSearchQuery && matchesCategory;
+  });
+
   return (
     <Box>
+      {/* Hero Image Section */}
       <HeroImage image={birthdayWgrandpa} />
-
-      <SectionDivider text="Những câu chuyện chưa kể..." />
-      <Typography
-        variant="h6"
-        sx={{ m: 2, textAlign: "center", fontStyle: "italic" }}
-      >
-        Hãy thả lỏng cơ thể và thư giãn đầu óc, nhớ lại những ký ức và câu
-        chuyện về người thân, rồi viết xuống bên dưới nhé.
-      </Typography>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          maxWidth: "600px",
-          margin: "auto",
-          my: 2,
-          padding: 2,
-          backgroundColor: "background.paper",
-          borderRadius: "8px",
-          boxShadow: 3,
-          key: formKey, // Trigger form re-render on form reset
-        }}
-      >
-        <Box component="form" sx={{ width: "100%" }} onSubmit={handleSubmit}>
-          <TextField
-            label="Story Name"
-            variant="outlined"
-            fullWidth
-            value={storyName}
-            onChange={(e) => setStoryName(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Teller Name"
-            variant="outlined"
-            fullWidth
-            value={tellerName}
-            onChange={(e) => setTellerName(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="story-category-label">Story Category</InputLabel>
-            <Select
-              labelId="story-category-label"
-              value={storyCategory}
-              onChange={(e) => setStoryCategory(e.target.value)}
-              label="Story Category"
-            >
-              {categories.map((category) => (
-                <MenuItem key={category} value={category}>
-                  {category}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            label="Your Story"
-            variant="outlined"
-            fullWidth
-            multiline
-            rows={4}
-            value={storyText}
-            onChange={(e) => setStoryText(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-
-          {/* Submit Button and Spinner */}
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-            {loading ? (
-              <CircularProgress />
-            ) : (
-              <Button type="submit" variant="contained" color="primary">
-                Submit
-              </Button>
-            )}
-          </Box>
-        </Box>
-
-        {/* Success Message */}
-        <Fade in={successMessage} timeout={1000}>
-          <Box sx={{ mt: 2, width: "100%" }}>
-            <Alert severity="success" onClose={() => setSuccessMessage(false)}>
-              Your story has been submitted successfully!
-            </Alert>
-          </Box>
-        </Fade>
-      </Box>
-
+      
+      {/* Section Divider */}
       <SectionDivider text="Đọc những câu chuyện kể rồi" />
+
+      {/* Subtitle */}
       <Typography
         variant="h6"
         sx={{ m: 2, textAlign: "center", fontStyle: "italic" }}
@@ -240,48 +93,77 @@ const Stories = () => {
         những câu chuyện đã được kể sau đây
       </Typography>
 
-      <Box sx={{ padding: 4 }}>
-     
+      {/* Search and Category Filter */}
+      <Box sx={{ display: "flex", justifyContent: "space-around", alignItems: "center", padding: 2, width: "100%" }}>
+        <TextField
+          label="Search Stories"
+          variant="outlined"
+          value={searchQuery}
+          onChange={handleSearch}
+          sx={{
+            width: "22.5%", // Reduced width
+            height: "56px", // Same height as the dropdown
+          }}
+        />
+        <FormControl sx={{ width: "22.5%", height: "56px" }}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            label="Category"
+            sx={{
+              width: "100%", // Take full width of the container
+              height: "100%", // Ensure it matches the height of the TextField
+            }}
+          >
+            <MenuItem value="">All Categories</MenuItem>
+            <MenuItem value="Adventure">Adventure</MenuItem>
+            <MenuItem value="Mystery">Mystery</MenuItem>
+            <MenuItem value="Romance">Romance</MenuItem>
+            <MenuItem value="Fantasy">Fantasy</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Stories List */}
-    
-      <Box sx={{ padding: 4 }}>
-    
-      <Grid container spacing={2}>
-        {filteredStories.slice(0, viewMore ? filteredStories.length : 4).map((story) => (
-          <Grid item xs={12} sm={6} key={story.id}>
-            <ListItem
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                borderBottom: "1px solid #ddd",
-                padding: 2,
-              }}
-            >
-              <ListItemText
-                primary={
-                  <Button
-                    component="a"
-                    href={story.link}
-                    sx={{ textDecoration: "none", color: "primary.main" }}
-                  >
-                    {story.title}
-                  </Button>
-                }
-                secondary={story.category}
-              />
-            </ListItem>
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ padding: 4, display: "flex", justifyContent: "center" }}>
+        <Grid container spacing={2} sx={{ maxWidth: "1200px" }}>
+          {filteredStories
+            .slice(0, viewMore ? filteredStories.length : 4)
+            .map((story) => (
+              <Grid item xs={12} sm={6} key={story.id}>
+                <ListItem
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    borderBottom: "1px solid #ddd",
+                    padding: 2,
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Button
+                        component={Link}
+                        to={`/stories/${story.id}`} // Navigate to the single story page using story ID
+                        sx={{ textDecoration: "none", color: "primary.main" }}
+                      >
+                        {story.title}
+                      </Button>
+                    }
+                    secondary={story.category}
+                  />
+                </ListItem>
+              </Grid>
+            ))}
+        </Grid>
+      </Box>
 
       {/* View More Button */}
-      <Box sx={{ textAlign: "center", mt: 2 }}>
+      <Box sx={{ textAlign: "center", m: 2 }}>
         <Button variant="contained" onClick={handleViewMore}>
           {viewMore ? "View Less" : "View More"}
         </Button>
       </Box>
-    </Box>
-    </Box>
     </Box>
   );
 };

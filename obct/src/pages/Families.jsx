@@ -551,7 +551,7 @@ const Families = () => {
                 alignItems: "center", // Centers vertically
               }}
             >
-              <Typography variant="h4" sx={{ mb: 2, textAlign: "center" }}>
+              <Typography variant="h4" sx={{ mb: 2, textAlign: "center", color: PRIMARY_COLOR}}>
                 Các thành viên
               </Typography>
               {index === 0 ? 

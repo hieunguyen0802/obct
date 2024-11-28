@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -12,22 +12,39 @@ import { Link } from "react-router-dom";
 import { Container } from "@mui/system";
 import HomeImage from "../asset/images/home.jpg";
 import Grandpas from "../asset/images/grandpas.jpg";
-import bacNang from "../asset/images/bacNang.jpg";
-import B2 from "../asset/images/B2.jpg";
-import B3 from "../asset/images/B3.jpg";
-import B4 from "../asset/images/B4.jpg";
-import C5 from "../asset/images/C5.jpg";
-import C6 from "../asset/images/C6.jpg";
-import C8 from "../asset/images/C8.jpg";
-
 import { PRIMARY_COLOR } from "../constant";
 import HeroImage from "../components/HeroImage";
 import SectionDivider from "../components/SectionDivider";
-
-
+import supabase from "../supabaseClient";
 
 const Home = () => {
-  const person = {
+  const [families, setFamilies] = useState([]); // State to store families data
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchFamilies = async () => {
+      const { data, error } = await supabase
+        .from("family") // Table name in your Supabase database
+        .select("*") // Adjust columns as needed, e.g., "id, husband, wife, image, description"
+        .order("familyId", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching families:", error);
+        setError(error.message);
+      } else {
+        setFamilies(data);
+      }
+      setLoading(false);
+    };
+
+    fetchFamilies();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
+
+  const person1 = {
     grandpa: {
       name: "Ông tôi - Giuse Nguyễn Văn Tài",
       description:
@@ -41,69 +58,12 @@ const Home = () => {
     image: Grandpas,
   };
 
-  const families = [
-    {
-      id: 1,
-      name: "Bác Giuse Nguyễn Năng",
-      image: bacNang,
-      description: "Tổng Giám Mục TGP. Sài Gòn",
-    },
-    {
-      id: 2,
-      name: "Chú Phaolô Nguyễn Ngọc Phương",
-      image: bacNang,
-      description: "Giám Đốc ĐCV Xuân Lộc",
-    },
-    {
-      id: 3,
-      husband: "Bác Phanxico Xavie Nguyễn Thái",
-      wife: "Maria Goretti Nguyễn Lan Anh",
-      image: B2,
-      description: "và các con, các cháu",
-    },
-    {
-      id: 4,
-      husband: "Bác Anton Nguyễn Xuân Thanh",
-      wife: "Maria Nguyễn Thị Minh",
-      image: B3,
-      description: "và các con, các cháu",
-    },
-    {
-      id: 5,
-      husband: "Chú Gioan Baotixita Nguyễn Quang Trung",
-      wife: "Anna Hoàng Thị Minh Thanh",
-      image: B4,
-      description: "và các con, các cháu",
-    },
-    {
-      id: 6,
-      husband: "Chú Phaolô Nguyễn Văn Đoạt",
-      wife: "Maria Nguyễn Thị Tuyết Vân",
-      image: C5,
-      description: "và các con, các cháu",
-    },
-    {
-      id: 7,
-      husband: "Chú Giuse Nguyễn Quang Trị",
-      wife: "Maria Nguyễn Thị Kim Loan",
-      image: C6,
-      description: "và các con, các cháu",
-    },
-
-    {
-      id: 8,
-      husband: "Chú Vincent Nguyễn Duy Anh Hào",
-      wife: "Maria Goretti Nguyễn Thị Tuyết Dung",
-      image: C8,
-      description: "và các con, các cháu",
-    },
-  ];
+  console.log(families);
 
   return (
     <Box>
       {/* Top Section: Large Image */}
-      <HeroImage image={HomeImage}
-      />
+      <HeroImage image={HomeImage} />
       <SectionDivider text="Ông bà kính yêu" />
       {/* Second Section */}
       <Container sx={{ py: 4 }}>
@@ -123,7 +83,7 @@ const Home = () => {
           {/* Left Info Cell */}
           <Box
             component={Link} // Use Link to wrap the Box
-            to={`/grandma/${person.grandma.id}`} // Set the target route
+            to={`/grandma/${families[0].familyId}`} // Set the target route
             sx={{
               flex: 1,
               textAlign: { xs: "center", md: "center" },
@@ -137,10 +97,10 @@ const Home = () => {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-              {person.grandma.name}
+              {person1.grandma.name}
             </Typography>
             <Typography variant="body1">
-              {person.grandma.description}
+              {person1.grandma.description}
             </Typography>
           </Box>
 
@@ -153,8 +113,8 @@ const Home = () => {
             }}
           >
             <img
-              src={person.image}
-              alt={person.name}
+              src={families[0].familyImageVertical}
+              alt={families[0].familyImageVertical}
               style={{
                 maxWidth: "100%",
                 height: "auto",
@@ -167,7 +127,7 @@ const Home = () => {
           {/* Right Info Cell */}
           <Box
             component={Link} // Use Link to wrap the Box
-            to={`/grandma/${person.grandma.id}`} // Set the target route
+            to={`/grandma/${families[0].familyId}`} // Set the target route
             sx={{
               flex: 1,
               textAlign: { xs: "center", md: "center" },
@@ -181,10 +141,10 @@ const Home = () => {
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-              {person.grandpa.name}
+              {person1.grandpa.name}
             </Typography>
             <Typography variant="body1">
-              {person.grandpa.description}
+              {person1.grandpa.description}
             </Typography>
           </Box>
         </Box>
@@ -213,75 +173,144 @@ const Home = () => {
       {/* Middle Section: Featured Products */}
       <Container sx={{ py: 4 }}>
         <Grid container spacing={4} justifyContent="center">
-          {families.map((family) => (
-            <Grid
-              item
-              xs={12}
-              md={6}
-              key={family.name}
-              sx={{ display: "flex", justifyContent: "center" }}
-            >
-              {/* Wrap the Card in a Link */}
-              <Card
-                component={Link} // Use Link component to wrap the Card
-                to={`/family/${family.id}`} // Navigate to the desired page
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center", // Horizontally center all content inside the Card
-                  padding: 2, // Add some padding
-                  textDecoration: "none", // Remove the default underline styling from the Link
-                  "&:hover": {
-                    boxShadow: 6, // Add a hover effect (optional)
-                  },
-                }}
+          {/* First, filter familyId 2 and 8 */}
+          {[...families]
+            .filter((family) => [2, 8].includes(family.familyId)) // Filter only familyId 2 and 8
+            .map((family) => (
+              <Grid
+                item
+                xs={12}
+                md={6}
+                key={family.name}
+                sx={{ display: "flex", justifyContent: "center" }}
               >
-                <CardMedia
-                  component="img"
-                  image={family.image}
-                  alt={family.name}
-                  sx={
-                    family.id === 1 || family.id === 2
-                      ? {
-                          height: "447px", // Set your desired height
-                          width: "335px", // Set your desired width
-                          objectFit: "cover", // Adjust how the image fits within the given dimensions
-                          borderRadius: "8px", // Optional: Add rounded corners
-                        }
-                      : {
-                          height: "270px", // Set your desired height
-                          width: "425px", // Set your desired width
-                          objectFit: "cover", // Adjust how the image fits within the given dimensions
-                          borderRadius: "8px", // Optional: Add rounded corners
-                        }
-                  }
-                />
-                <CardContent
+                <Card
+                  component={Link} // Wrap the Card in a Link
+                  to={`/family/${family.id}`} // Navigate to the family page
                   sx={{
-                    textAlign: "center", // Center the text inside CardContent
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center", // Horizontally center all content inside the Card
+                    padding: 2,
+                    textDecoration: "none", // Remove the default underline styling from the Link
+                    "&:hover": {
+                      boxShadow: 6, // Hover effect (optional)
+                    },
                   }}
                 >
-                  {family.id === 1 || family.id === 2 ? (
-                    <Typography variant="h6" gutterBottom>
-                      {family.name}
-                    </Typography>
+                  {family.familyId === 2 || family.familyId === 8 ? (
+                    <CardMedia
+                      component="img"
+                      image={family.familyImageVertical}
+                      alt={family.familyImageVertical}
+                      sx={{
+                        height: "447px", // Set the height
+                        width: "335px", // Set the width
+                        objectFit: "cover", // Adjust the image's fit within the given dimensions
+                        borderRadius: "8px", // Optional: Add rounded corners
+                      }}
+                    />
                   ) : (
-                    <>
-                      <Typography variant="h6" gutterBottom>
-                        {family.husband}
-                      </Typography>
-                      <Typography variant="h6" gutterBottom>
-                        {family.wife}
-                      </Typography>
-                    </>
+                    <CardMedia
+                      component="img"
+                      image={family.familyImageHorizontal}
+                      alt={family.familyImageHorizontal}
+                      sx={{
+                        height: "270px",
+                        width: "425px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
+                    />
                   )}
-                  <Typography variant="body1" color="textSecondary">
-                    {family.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+
+                  <CardContent sx={{ textAlign: "center" }}>
+                    <Typography variant="h6" gutterBottom>
+                      {family.familyHusband}
+                    </Typography>
+                    {family.familyId !== 2 && family.familyId !== 8 && (
+                      <Typography variant="h6" gutterBottom>
+                        {family.familyWife}
+                      </Typography>
+                    )}
+                    <Typography variant="body1" color="textSecondary">
+                      {family.familyDescription}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          {/* Now render the other families */}
+          {families
+            .filter((family) => ![2, 8, 1, 10].includes(family.familyId)) // Filter out familyId 2 and 8
+            .map((family) => (
+              <Grid
+                item
+                xs={12}
+                md={6}
+                key={family.name}
+                sx={{ display: "flex", justifyContent: "center" }}
+              >
+                <Card
+                  component={Link} // Wrap the Card in a Link
+                  to={`/family/${family.id}`} // Navigate to the family page
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center", // Horizontally center all content inside the Card
+                    padding: 2,
+                    textDecoration: "none", // Remove the default underline styling from the Link
+                    "&:hover": {
+                      boxShadow: 6, // Hover effect (optional)
+                    },
+                  }}
+                >
+                  {family.familyId === 2 || family.familyId === 8 ? (
+                    <CardMedia
+                      component="img"
+                      image={family.familyImageVertical}
+                      alt={family.familyImageVertical}
+                      sx={{
+                        height: "447px", // Set the height
+                        width: "335px", // Set the width
+                        objectFit: "cover", // Adjust the image's fit within the given dimensions
+                        borderRadius: "8px", // Optional: Add rounded corners
+                      }}
+                    />
+                  ) : (
+                    <CardMedia
+                      component="img"
+                      image={family.familyImageHorizontal}
+                      alt={family.familyImageHorizontal}
+                      sx={{
+                        height: "270px",
+                        width: "425px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                      }}
+                    />
+                  )}
+
+                  <CardContent sx={{ textAlign: "center" }}>
+                    <Typography variant="h6" gutterBottom>
+                      {family.familyHusband}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontSize: 24, margin: "0 8px", color: "red" }}
+                    >
+                      &#10084; {/* Heart symbol */}
+                    </Typography>
+
+                    <Typography variant="h6" gutterBottom>
+                      {family.familyWife}
+                    </Typography><Typography variant="h6" gutterBottom>
+                      {family.familyDescription}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
         </Grid>
       </Container>
     </Box>

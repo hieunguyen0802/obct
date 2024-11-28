@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Tabs,
   Tab,
@@ -24,247 +24,209 @@ import B2 from "../asset/images/B2.jpg";
 import PriestSit from "../asset/images/familyPage/menkixede_sit.jpg";
 import PriestStand from "../asset/images/familyPage/menkixede_stand.jpg";
 
+import supabase from "../supabaseClient"; // Import your supabase client
+
 import HeroImage from "../components/HeroImage";
 import SectionDivider from "../components/SectionDivider";
 import { PRIMARY_COLOR } from "../constant";
 
 const Families = () => {
   const [value, setValue] = React.useState(0);
+  const [tabsData, setTabsData] = useState([]);
+  const [B1Image, setB1Image] = useState();
+  const [C7Image, setC7Image] = useState();
+  const [OCImage, setOCImage] = useState();
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  const people = [
+  useEffect(() => {
+    // Fetch data from Supabase
+    const fetchData = async () => {
+      try {
+        // Fetch families and related members
+        const { data, error } = await supabase
+          .from("family")
+          .select(
+            `
+            familyId, 
+            familyName, 
+            familyHusband, 
+            familyWife, 
+            familyDescription, 
+            familyChildrenNo, 
+            familyMemberNo, 
+            familyImageVertical,
+            familyImageVertical1,
+            familyImageHorizontal,
+            familyImageHorizontal1,
+            member (
+              memberId, 
+              memberName, 
+              avatar, 
+              memberPatronSt, 
+              memberPatronStDate, 
+              memberDOB, 
+              memberMarriageDate, 
+              memberSpecialInfo, 
+              memberSpecialDate, 
+              memberSpecialInfo1, 
+              memberSpecialDate1, 
+              memberSpecialInfo2, 
+              memberSpecialDate2, 
+              memberGen
+            ),
+            story (
+              storyId,
+              storyName
+            )
+          `
+          )
+          .order("familyId", { ascending: true });
+
+        if (error) throw error;
+
+        const orderedData = data
+          .sort((a, b) => a.familyId - b.familyId) // Order families by familyId
+          .map((family) => ({
+            ...family,
+            member: family.member.sort((a, b) => a.memberId - b.memberId), // Order members by memberId
+          }));
+
+        setB1Image(orderedData[1].familyImageVertical1);
+        setC7Image(orderedData[7].familyImageVertical);
+        setOCImage(orderedData[9].familyImageVertical);
+
+        const combinedFamilyIds = [2, 8, 10];
+
+        const combinedFamily = orderedData
+          .filter((family) => combinedFamilyIds.includes(family.familyId))
+          .reduce(
+            (acc, family) => {
+              // Merge each family’s data
+              acc.familyName = "Line of Melchizedek"; // Combine family names if necessary
+              acc.familyMemberNo += family.familyMemberNo; // Sum up family members
+              acc.familyChildrenNo += family.familyChildrenNo; // Sum up children count
+              acc.familyImageHorizontal =
+                family.familyImageHorizontal || acc.familyImageHorizontal;
+              acc.familyImageHorizontal1 =
+                family.familyImageHorizontal1 || acc.familyImageHorizontal1;
+              acc.familyImageVertical =
+                family.familyImageVertical || acc.familyImageVertical;
+              acc.familyImageVertical1 =
+                family.familyImageVertical1 || acc.familyImageVertical1;
+              // Merge members
+              acc.members = [
+                ...acc.members,
+                ...family.member.map((member) => ({
+                  avatar: member.avatar,
+                  name: `${member.memberPatronSt} ${member.memberName}`,
+                  dob: member.memberDOB,
+                  patronDate: member.memberPatronStDate,
+                  marriageDate: member.memberMarriageDate,
+                  gen: member.memberGen,
+                  specialInfo: member.memberSpecialInfo,
+                  specialInfo1: member.memberSpecialInfo1,
+                  specialInfo2: member.memberSpecialInfo2,
+                  specialDate: member.memberSpecialDate,
+                  specialDate1: member.memberSpecialDate1,
+                  specialDate2: member.memberSpecialDate2,
+                })),
+              ];
+
+              // Combine stories
+              acc.stories = [
+                ...acc.stories,
+                ...family.story.map((story) => ({
+                  storyId: story.storyId,
+                  storyName: story.storyName,
+                })),
+              ];
+
+              return acc;
+            },
+            {
+              familyName: "",
+              familyMemberNo: 0,
+              familyChildrenNo: 0,
+              familyImage: [],
+              members: [],
+              stories: [],
+            }
+          );
+
+        // Add the combined family as the first family or wherever it fits in the `finalData`
+        const finalData = orderedData
+          .filter((family) => !combinedFamilyIds.includes(family.familyId)) // Exclude individual families that are combined
+          .map((family) => ({
+            familyName: family.familyName,
+            familyMemberNo: family.familyMemberNo,
+            familyChildrenNo: family.familyChildrenNo,
+            familyImageHorizontal: family.familyImageHorizontal,
+            familyImageHorizontal1: family.familyImageHorizontal1,
+            familyImageVertical: family.familyImageVertical,
+            familyImageVertical1: family.familyImageVertical1,
+            members: family.member.map((member) => ({
+              id: member.memberId,
+              avatar: member.avatar,
+              name: `${member.memberPatronSt} ${member.memberName}`,
+              dob: member.memberDOB,
+              patronDate: member.memberPatronStDate,
+              marriageDate: member.memberMarriageDate,
+              gen: member.memberGen,
+              specialInfo: member.memberSpecialInfo,
+              specialInfo1: member.memberSpecialInfo1,
+              specialInfo2: member.memberSpecialInfo2,
+              specialDate: member.memberSpecialDate,
+              specialDate1: member.memberSpecialDate1,
+              specialDate2: member.memberSpecialDate2,
+            })),
+            stories: family.story.map((story) => ({
+              storyId: story.storyId,
+              storyName: story.storyName,
+            })),
+          }));
+
+        // Add the combined family to the beginning of the finalData array
+        finalData.splice(1, 0, combinedFamily);
+
+        setTabsData(finalData);
+        console.log(finalData);
+      } catch (error) {
+        console.error("Error fetching data: ", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const priests = [
     {
-      id: 1,
-      name: "John Doe",
-      avatar: "https://i.pravatar.cc/100?img=1",
-      description: "Software Engineer",
+      name: "Antôn Vũ Sỹ Hoằng",
+      priestDate: "21/12/1967",
+      priestMotto: "Con cảm tạ Chúa muôn đời",
+      died: "02/07/2023",
+      image: OCImage,
     },
     {
-      id: 2,
-      name: "Jane Smith",
-      avatar: "https://i.pravatar.cc/100?img=2",
-      description: "Product Manager",
+      name: "Giuse Nguyễn Năng",
+      title: "Tổng Giám Mục TGP. Sài Gòn",
+      priestDate: "06/09/1990",
+      priestMotto: "Vì họ, con xin thánh hiến chính mình",
+      bishopDate: "08/09/2009",
+      bishopMotto: "Hiệp thông - Phục vụ",
+      image: B1Image,
     },
     {
-      id: 3,
-      name: "Michael Brown",
-      avatar: "https://i.pravatar.cc/100?img=3",
-      description: "Designer",
-    },
-    {
-      id: 4,
-      name: "Emily Johnson",
-      avatar: "https://i.pravatar.cc/100?img=4",
-      description: "Marketing Specialist",
+      name: "Phaolô Nguyễn Ngọc Phương",
+      title: "Giám đốc ĐCV Xuân Lộc",
+      priestDate: "30/09/2005",
+      priestMotto: "Tôi đã trở nên người phục vụ Tin Mừng",
+      image: C7Image,
     },
   ];
 
-  // Example tab data
-  const tabsData = [
-    {
-      label: "Melchizedek Line",
-      imageCollage: [PriestSit, PriestStand],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình bác Thái",
-      imageCollage: [B2, bacNang, bacNang, B2],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình bác Thanh",
-      imageCollage: [
-        "/images/image5.jpg",
-        "/images/image6.jpg",
-        "/images/image7.jpg",
-        "/images/image8.jpg",
-      ],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình chú Trung",
-      imageCollage: [
-        "/images/image9.jpg",
-        "/images/image10.jpg",
-        "/images/image11.jpg",
-        "/images/image12.jpg",
-      ],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình cô Vân",
-      imageCollage: [
-        "/images/image13.jpg",
-        "/images/image14.jpg",
-        "/images/image15.jpg",
-        "/images/image16.jpg",
-      ],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình cô Loan",
-      imageCollage: [
-        "/images/image17.jpg",
-        "/images/image18.jpg",
-        "/images/image19.jpg",
-        "/images/image20.jpg",
-      ],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-    {
-      label: "Gia đình cô Dung",
-      imageCollage: [
-        "/images/image21.jpg",
-        "/images/image22.jpg",
-        "/images/image23.jpg",
-        "/images/image24.jpg",
-      ],
-      info: {
-        title: "Learn More About Our Services",
-        description:
-          "Explore the key points below and dive deeper into additional resources to get the most out of our offerings.",
-        upperList: [
-          "Comprehensive service options tailored to your needs.",
-          "Expert advice from industry professionals.",
-          "Affordable plans designed for flexibility.",
-          "24/7 customer support to assist you anytime.",
-        ],
-        lowerList: [
-          { text: "How It Works", link: "https://example.com/how-it-works" },
-          { text: "Pricing Plans", link: "https://example.com/pricing" },
-          {
-            text: "Customer Testimonials",
-            link: "https://example.com/testimonials",
-          },
-          { text: "FAQs", link: "https://example.com/faqs" },
-          { text: "Contact Us", link: "https://example.com/contact" },
-        ],
-      },
-    },
-  ];
   return (
     <Box>
       <HeroImage image={FamilyPage} />
@@ -284,20 +246,21 @@ const Families = () => {
             variant="scrollable"
             scrollButtons="auto"
             aria-label="scrollable auto tabs example"
+            allowScrollButtonsMobile
             sx={{
+              overflowX: "auto",
               "& .MuiTabs-indicator": {
                 backgroundColor: "warning.main", // Change the underline to warning color
               },
             }}
           >
             {tabsData.map((tab, index) => (
-              <Tab key={index} label={tab.label} />
+              <Tab key={index} label={tab.familyName} />
             ))}
           </Tabs>
         </Box>
 
-        {/* Tab Content */}
-        {tabsData.map((tab, index) => (
+        {tabsData.map((family, index) => (
           <Box
             key={index}
             sx={{
@@ -305,33 +268,46 @@ const Families = () => {
               padding: 2,
             }}
           >
-            {index === 0 ? (
-              <Grid
-                container
-                spacing={2}
-                sx={{
-                  justifyContent: "center",
-                  alignItems: "center", // Center align both images vertically
-                  textAlign: "center",
-                }}
-              >
+            {index === 1 ? (
+              <Grid container spacing={2}>
                 {/* Left Horizontal Image */}
                 <Grid
                   item
                   xs={12}
-                  md={6}
+                  md={4}
                   sx={{ display: "flex", justifyContent: "center" }}
                 >
                   <CardMedia
                     component="img"
-                    image={tab.imageCollage[0]} // First image
+                    image={family.familyImageHorizontal} // First image
                     alt="Horizontal Image 1"
                     sx={{
                       width: "100%",
-                      maxWidth: "500px", // Optional: Limit image width
+                      maxWidth: "700px", // Optional: Adjust image width for balance
                       borderRadius: "8px",
                       objectFit: "cover",
                       height: "auto",
+                    }}
+                  />
+                </Grid>
+
+                {/* Middle Vertical Image */}
+                <Grid
+                  item
+                  xs={12}
+                  md={4}
+                  sx={{ display: "flex", justifyContent: "center" }}
+                >
+                  <CardMedia
+                    component="img"
+                    image={family.familyImageVertical1} // Middle vertical image
+                    alt="Vertical Image"
+                    sx={{
+                      height: "100%",
+                      maxHeight: "500px", // Optional: Limit image height
+                      borderRadius: "8px",
+                      objectFit: "cover",
+                      width: "auto",
                     }}
                   />
                 </Grid>
@@ -340,16 +316,16 @@ const Families = () => {
                 <Grid
                   item
                   xs={12}
-                  md={6}
+                  md={4}
                   sx={{ display: "flex", justifyContent: "center" }}
                 >
                   <CardMedia
                     component="img"
-                    image={tab.imageCollage[1]} // Second image
+                    image={family.familyImageHorizontal1} // Second horizontal image
                     alt="Horizontal Image 2"
                     sx={{
                       width: "100%",
-                      maxWidth: "500px", // Optional: Limit image width
+                      maxWidth: "700px", // Optional: Adjust image width for balance
                       borderRadius: "8px",
                       objectFit: "cover",
                       height: "auto",
@@ -379,7 +355,7 @@ const Families = () => {
                         sx={{ gridRow: "span 1", gridColumn: "span 1" }}
                       >
                         <img
-                          src={tabsData[1].imageCollage[0]}
+                          src={family.familyImageHorizontal}
                           alt="Top Left"
                           style={{
                             borderRadius: "8px",
@@ -396,7 +372,7 @@ const Families = () => {
                         sx={{ gridRow: "span 2", gridColumn: "span 1" }}
                       >
                         <img
-                          src={tabsData[1].imageCollage[1]}
+                          src={family.familyImageVertical}
                           alt="Top Right"
                           style={{
                             borderRadius: "8px",
@@ -413,7 +389,7 @@ const Families = () => {
                         sx={{ gridRow: "span 2", gridColumn: "span 1" }}
                       >
                         <img
-                          src={tabsData[1].imageCollage[2]}
+                          src={family.familyImageVertical1}
                           alt="Bottom Left"
                           style={{
                             borderRadius: "8px",
@@ -430,7 +406,7 @@ const Families = () => {
                         sx={{ gridRow: "span 1", gridColumn: "span 1" }}
                       >
                         <img
-                          src={tabsData[1].imageCollage[3]}
+                          src={family.familyImageHorizontal1}
                           alt="Bottom Right"
                           style={{
                             borderRadius: "8px",
@@ -443,19 +419,12 @@ const Families = () => {
                     </ImageList>
                   </Box>
                 </Grid>
-
-                {/* Right: Information */}
-                <Grid
-                  item
-                  xs={12}
-                  md={6}
-                  sx={{ display: "flex", justifyContent: "center" }}
-                >
+                <Grid item xs={12} md={6} sx={{ display: "flex" }}>
                   <Box
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      justifyContent: "center",
+
                       height: "100%",
                       width: "100%", // Ensure full width for alignment
                       maxWidth: "600px", // Optional: Limit the width
@@ -467,7 +436,7 @@ const Families = () => {
                         variant="h5"
                         sx={{ mb: 2, textAlign: "left" }}
                       >
-                        {tab.info.title}
+                        Thông tin chung
                       </Typography>
                       <ul
                         style={{
@@ -477,18 +446,36 @@ const Families = () => {
                           margin: 0, // Remove default margins for ul
                         }}
                       >
-                        {tab.info.upperList.map((item, index) => (
+                        <li
+                          style={{
+                            marginBottom: "8px",
+                            fontSize: "16px",
+                            lineHeight: "1.5",
+                          }}
+                        >
+                          Ngày sinh nhật gia đình:{" "}
+                          {family.members[0].marriageDate}
+                        </li>
+                        <li
+                          style={{
+                            marginBottom: "8px",
+                            fontSize: "16px",
+                            lineHeight: "1.5",
+                          }}
+                        >
+                          Số con: {family.familyChildrenNo}
+                        </li>
+                        {family.familyMemberNo && (
                           <li
-                            key={index}
                             style={{
                               marginBottom: "8px",
                               fontSize: "16px",
                               lineHeight: "1.5",
                             }}
                           >
-                            {item}
+                            Số cháu: {family.familyMemberNo}
                           </li>
-                        ))}
+                        )}
                       </ul>
                     </Box>
 
@@ -498,7 +485,7 @@ const Families = () => {
                         variant="h5"
                         sx={{ mb: 2, textAlign: "left" }}
                       >
-                        Additional Resources
+                        Chuyện về gia đình
                       </Typography>
                       <ul
                         style={{
@@ -508,10 +495,10 @@ const Families = () => {
                           margin: 0, // Remove default margins for ul
                         }}
                       >
-                        {tab.info.lowerList.map((item, index) => (
+                        {family.stories.map((item, index) => (
                           <li key={index} style={{ marginBottom: "12px" }}>
                             <a
-                              href={item.link}
+                              href={item.item.storyId}
                               style={{
                                 textDecoration: "none",
                                 color: "#1976d2", // Link color
@@ -521,7 +508,7 @@ const Families = () => {
                               target="_blank"
                               rel="noopener noreferrer"
                             >
-                              {item.text}
+                              {item.storyName}
                             </a>
                           </li>
                         ))}
@@ -531,7 +518,6 @@ const Families = () => {
                 </Grid>
               </Grid>
             )}
-            {/* Content for Tab */}
 
             <Divider
               sx={{
@@ -551,89 +537,141 @@ const Families = () => {
                 alignItems: "center", // Centers vertically
               }}
             >
-              <Typography variant="h4" sx={{ mb: 2, textAlign: "center", color: PRIMARY_COLOR}}>
+              <Typography
+                variant="h4"
+                sx={{ mb: 2, textAlign: "center", color: PRIMARY_COLOR }}
+              >
                 Các thành viên
               </Typography>
-              {index === 0 ? 
-               <Card
-               sx={{
-                 display: "flex",
-                 flexDirection: "column",
-                 alignItems: "center", // Horizontally center all content inside the Card
-                 padding: 2, // Add some padding
-                 textDecoration: "none", // Remove the default underline styling from the Link
-                 "&:hover": {
-                   boxShadow: 6, // Add a hover effect (optional)
-                 },
-               }}
-             >
-               <CardMedia
-                 component="img"
-                 image= {bacNang}
-                 alt= "text"
-                 sx={{
-                         height: "447px", // Set your desired height
-                         width: "335px", // Set your desired width
-                         objectFit: "cover", // Adjust how the image fits within the given dimensions
-                         borderRadius: "8px", // Optional: Add rounded corners
-                       }}
-               />
-               <CardContent
-                 sx={{
-                   textAlign: "center", // Center the text inside CardContent
-                 }}
-               >
-                 <Typography variant="body1" color="textSecondary">
-                   "Bác Năng"
-                 </Typography>
-               </CardContent>
-             </Card>
-              :
-              <List
-              sx={{
-                width: "100%",
-                maxWidth: 800, // Adjust the max width for the list
-                margin: "0 auto", // Center the list horizontally
-              }}
-            >
-              <Grid container spacing={2}>
-                {people.map((person) => (
-                  <Grid item xs={12} sm={6} key={person.id}>
-                    <ListItem
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        mb: 2,
-                        boxShadow: 1,
-                        borderRadius: 2,
-                        p: 2,
-                      }}
+              {index === 1 ? (
+                <Grid container spacing={2} justifyContent="center">
+                  {priests.map((item) => (
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                      sx={{ display: "flex", justifyContent: "center" }}
                     >
-                      {/* Left: Avatar */}
-                      <ListItemAvatar>
-                        <Avatar
-                          alt={person.name}
-                          src={person.avatar}
-                          sx={{ width: 100, height: 100 }} // Bigger avatar
+                      <Card
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center", // Center all content inside the Card
+                          padding: 2,
+                          textDecoration: "none",
+                          "&:hover": {
+                            boxShadow: 6, // Add a hover effect
+                          },
+                        }}
+                      >
+                        <CardMedia
+                          component="img"
+                          image={item.image}
+                          alt="Ông Cậu"
+                          sx={{
+                            height: "447px", // Desired height
+                            width: "335px", // Desired width
+                            objectFit: "cover", // Ensure image fits dimensions
+                            borderRadius: "8px",
+                          }}
                         />
-                      </ListItemAvatar>
+                        <CardContent
+                          sx={{
+                            textAlign: "center", // Center the text
+                          }}
+                        >
+                          <Typography variant="body1" color="textSecondary">
+                            "Bác Năng" {item.name}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : (
+                <List
+                  sx={{
+                    width: "100%",
+                    maxWidth: 1200, // Adjust the max width for the list
+                    margin: "0 auto", // Center the list horizontally
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    {family.members.map((person) => (
+                      <Grid item xs={12} sm={6} key={person.id}>
+                        <ListItem
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 2,
+                            boxShadow: 1,
+                            borderRadius: 2,
+                            p: 2,
+                          }}
+                        >
+                          {/* Left: Avatar */}
+                          <ListItemAvatar>
+                            <Avatar
+                              alt={person.name}
+                              src={person.avatar}
+                              sx={{ width: 100, height: 100 }} // Bigger avatar
+                            />
+                          </ListItemAvatar>
 
-                      {/* Right: Name and Description */}
-                      <Box sx={{ ml: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                          {person.name}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {person.description}
-                        </Typography>
-                      </Box>
-                    </ListItem>
+                          {/* Right: Name and Description */}
+                          <Box sx={{ ml: 2 }}>
+                            <Typography variant="h6">{person.name}</Typography>
+                            <Typography variant="body2">
+                              Thế hệ: {person.gen}
+                            </Typography>
+                            <Typography variant="body2">
+                              Ngày sinh: {person.dob}
+                            </Typography>
+                            <Typography variant="body2">
+                              Ngày bổn mạng: {person.patronDate}
+                            </Typography>
+                            {person.marriageDate && (
+                              <Typography variant="body2">
+                                {person.id === 3 || person.id === 9
+                                  ? "Ngày thụ phong linh mục"
+                                  : "Ngày cưới"}
+                                : {person.marriageDate}
+                              </Typography>
+                            )}
+                            {person.specialInfo && (
+                              <Typography variant="body2">
+                                {person.id === 3 || person.id === 9
+                                  ? "Châm ngôn đời linh mục"
+                                  : person.specialInfo}
+                                :{" "}
+                                {person.id === 3 || person.id === 9
+                                  ? person.specialInfo
+                                  : person.specialDate}
+                              </Typography>
+                            )}
+                            {person.specialInfo1 && (
+                              <Typography variant="body2">
+                                {person.id === 3
+                                  ? "Châm ngôn đời giám mục"
+                                  : person.specialInfo1}
+                                :{" "}
+                                {person.id === 3
+                                  ? person.specialInfo1
+                                  : person.specialDate1}
+                              </Typography>
+                            )}
+                            {person.specialInfo2 && (
+                              <Typography variant="body2">
+                                {person.specialInfo2}: {person.specialDate2}
+                              </Typography>
+                            )}
+                          </Box>
+                        </ListItem>
+                      </Grid>
+                    ))}
                   </Grid>
-                ))}
-              </Grid>
-            </List>
-              }
-             
+                </List>
+              )}
             </Box>
           </Box>
         ))}

@@ -8,6 +8,7 @@ import Families from "./pages/Families";
 import Stories from "./pages/Stories";
 import Libraries from "./pages/Libraries";
 import AppWrapper from "./hooks/AppWrapper";
+import Demo from "./pages/demo";
 
 
 const App = () => (
@@ -17,6 +18,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/families" element={<Families />} />
+        <Route path="/demo" element={<Demo />} />
         <Route path="/stories" element={<Stories />} />
         <Route path="/libraries" element={<Libraries />} />
         <Route path="/stories/:storyId" element={<SingleStory />} />

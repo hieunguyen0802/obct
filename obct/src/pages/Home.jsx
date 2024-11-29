@@ -58,7 +58,20 @@ const Home = () => {
     image: Grandpas,
   };
 
-  console.log(families);
+
+  const mapFamilyIdToTabIndex = (familyId) => {
+    const mapping = {
+      2: 1,
+      8: 1,
+      3: 2,
+      4: 3,
+      5: 4,
+      6: 5,
+      9: 6,
+    };
+    return mapping[familyId] || 0; // Default to tabIndex 0 if familyId is not in the mapping
+  };
+
 
   return (
     <Box>
@@ -83,7 +96,7 @@ const Home = () => {
           {/* Left Info Cell */}
           <Box
             component={Link} // Use Link to wrap the Box
-            to={`/grandma/${families[0].familyId}`} // Set the target route
+            to={`/family/1?tabIndex=0`} // Set the target route
             sx={{
               flex: 1,
               textAlign: { xs: "center", md: "center" },
@@ -127,7 +140,7 @@ const Home = () => {
           {/* Right Info Cell */}
           <Box
             component={Link} // Use Link to wrap the Box
-            to={`/grandma/${families[0].familyId}`} // Set the target route
+            to={`/family/1?tabIndex=0`} // Set the target route
             sx={{
               flex: 1,
               textAlign: { xs: "center", md: "center" },
@@ -185,16 +198,16 @@ const Home = () => {
                 sx={{ display: "flex", justifyContent: "center" }}
               >
                 <Card
-                  component={Link} // Wrap the Card in a Link
-                  to={`/family/${family.id}`} // Navigate to the family page
+                  component={Link}
+                  to={`/family/${family.familyId}?tabIndex=${mapFamilyIdToTabIndex(family.familyId)}`}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center", // Horizontally center all content inside the Card
+                    alignItems: "center",
                     padding: 2,
-                    textDecoration: "none", // Remove the default underline styling from the Link
+                    textDecoration: "none",
                     "&:hover": {
-                      boxShadow: 6, // Hover effect (optional)
+                      boxShadow: 6,
                     },
                   }}
                 >
@@ -253,7 +266,7 @@ const Home = () => {
               >
                 <Card
                   component={Link} // Wrap the Card in a Link
-                  to={`/family/${family.id}`} // Navigate to the family page
+                  to={`/family/${family.familyId}?tabIndex=${mapFamilyIdToTabIndex(family.familyId)}`}
                   sx={{
                     display: "flex",
                     flexDirection: "column",

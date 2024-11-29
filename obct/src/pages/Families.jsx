@@ -17,18 +17,13 @@ import {
   Card,
 } from "@mui/material";
 
-import FamilyPage from "../asset/images/familyPage/family.jpg";
-
-import bacNang from "../asset/images/bacNang.jpg";
-import B2 from "../asset/images/B2.jpg";
-import PriestSit from "../asset/images/familyPage/menkixede_sit.jpg";
-import PriestStand from "../asset/images/familyPage/menkixede_stand.jpg";
-
+import FamilyImage from "../asset/images/family.jpg";
 import supabase from "../supabaseClient"; // Import your supabase client
-
+import { useSearchParams } from "react-router-dom";
 import HeroImage from "../components/HeroImage";
 import SectionDivider from "../components/SectionDivider";
 import { PRIMARY_COLOR } from "../constant";
+import defaultVerical from "../asset/images/login_background.png";
 
 const Families = () => {
   const [value, setValue] = React.useState(0);
@@ -36,9 +31,17 @@ const Families = () => {
   const [B1Image, setB1Image] = useState();
   const [C7Image, setC7Image] = useState();
   const [OCImage, setOCImage] = useState();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const tabIndex = parseInt(searchParams.get("tabIndex"), 10); // Get the tabIndex from URL
+    if (!isNaN(tabIndex) && tabIndex >= 0 && tabIndex < tabsData.length) {
+      setValue(tabIndex); // Set the tab index
+    }
+  }, [searchParams, tabsData.length]);
 
   const handleChange = (event, newValue) => {
-    setValue(newValue);
+    setValue(newValue); // Update active tab on user interaction
   };
 
   useEffect(() => {
@@ -227,13 +230,15 @@ const Families = () => {
     },
   ];
 
+  console.log(tabsData);
+
   return (
     <Box>
-      <HeroImage image={FamilyPage} />
+      <HeroImage image={FamilyImage} />
 
       <SectionDivider text="Gia phả dòng họ" />
 
-      <HeroImage image={FamilyPage} />
+      <HeroImage image={FamilyImage} />
 
       <SectionDivider text="Các gia đình" />
 
@@ -245,17 +250,23 @@ const Families = () => {
             onChange={handleChange}
             variant="scrollable"
             scrollButtons="auto"
-            aria-label="scrollable auto tabs example"
+            aria-label="family tabs"
             allowScrollButtonsMobile
             sx={{
-              overflowX: "auto",
               "& .MuiTabs-indicator": {
-                backgroundColor: "warning.main", // Change the underline to warning color
+                backgroundColor: "warning.main", // Customize the indicator color
               },
             }}
           >
             {tabsData.map((tab, index) => (
-              <Tab key={index} label={tab.familyName} />
+              <Tab
+                key={index}
+                label={tab.familyName}
+                sx={{
+                  fontSize: "1.2rem", // Increase font size (adjust as needed)
+                  textTransform: "none", // Prevent automatic uppercase transformation
+                }}
+              />
             ))}
           </Tabs>
         </Box>
@@ -279,7 +290,7 @@ const Families = () => {
                 >
                   <CardMedia
                     component="img"
-                    image={family.familyImageHorizontal} // First image
+                    image={family.familyImageHorizontal ?? FamilyImage} // First image
                     alt="Horizontal Image 1"
                     sx={{
                       width: "100%",
@@ -321,7 +332,7 @@ const Families = () => {
                 >
                   <CardMedia
                     component="img"
-                    image={family.familyImageHorizontal1} // Second horizontal image
+                    image={family.familyImageHorizontal1 ?? FamilyImage} // Second horizontal image
                     alt="Horizontal Image 2"
                     sx={{
                       width: "100%",
@@ -372,7 +383,7 @@ const Families = () => {
                         sx={{ gridRow: "span 2", gridColumn: "span 1" }}
                       >
                         <img
-                          src={family.familyImageVertical}
+                          src={family.familyImageVertical ?? defaultVerical}
                           alt="Top Right"
                           style={{
                             borderRadius: "8px",
@@ -389,7 +400,7 @@ const Families = () => {
                         sx={{ gridRow: "span 2", gridColumn: "span 1" }}
                       >
                         <img
-                          src={family.familyImageVertical1}
+                          src={family.familyImageVertical1 ?? defaultVerical}
                           alt="Bottom Left"
                           style={{
                             borderRadius: "8px",
@@ -453,7 +464,7 @@ const Families = () => {
                             lineHeight: "1.5",
                           }}
                         >
-                          Ngày sinh nhật gia đình:{" "}
+                          👩‍❤️‍👨 Ngày sinh nhật gia đình:{" "}
                           {family.members[0].marriageDate}
                         </li>
                         <li
@@ -463,7 +474,7 @@ const Families = () => {
                             lineHeight: "1.5",
                           }}
                         >
-                          Số con: {family.familyChildrenNo}
+                          👨‍👩‍👧‍👦 Số con: {family.familyChildrenNo}
                         </li>
                         {family.familyMemberNo && (
                           <li
@@ -473,7 +484,7 @@ const Families = () => {
                               lineHeight: "1.5",
                             }}
                           >
-                            Số cháu: {family.familyMemberNo}
+                           👨‍👩‍👧‍👦 Số cháu: {family.familyMemberNo}
                           </li>
                         )}
                       </ul>
@@ -567,9 +578,9 @@ const Families = () => {
                         <CardMedia
                           component="img"
                           image={item.image}
-                          alt="Ông Cậu"
+                          alt={item.name}
                           sx={{
-                            height: "447px", // Desired height
+                            height: "467px", // Desired height
                             width: "335px", // Desired width
                             objectFit: "cover", // Ensure image fits dimensions
                             borderRadius: "8px",
@@ -580,9 +591,33 @@ const Families = () => {
                             textAlign: "center", // Center the text
                           }}
                         >
-                          <Typography variant="body1" color="textSecondary">
-                            "Bác Năng" {item.name}
+                          <Typography variant="body1">{item.name}</Typography>
+                          {item.title && (
+                            <Typography variant="body1">
+                              {item.title}
+                            </Typography>
+                          )}
+                          <Typography variant="body1">
+                            Linh mục: {item.priestDate}
                           </Typography>
+                          <Typography variant="body1" color="textSecondary">
+                            "<i>{item.priestMotto}</i>"
+                          </Typography>
+                          {item.bishopDate && (
+                            <>
+                              <Typography variant="body1">
+                                Giám mục: {item.bishopDate}
+                              </Typography>
+                              <Typography variant="body1" color="textSecondary">
+                              "<i>{item.bishopMotto}</i>"
+                              </Typography>
+                            </>
+                          )}
+                          {item.died && (
+                            <Typography variant="body1">
+                              &#10013; Về nhà Chúa: {item.died}
+                            </Typography>
+                          )}
                         </CardContent>
                       </Card>
                     </Grid>
@@ -622,49 +657,44 @@ const Families = () => {
                           <Box sx={{ ml: 2 }}>
                             <Typography variant="h6">{person.name}</Typography>
                             <Typography variant="body2">
-                              Thế hệ: {person.gen}
+                              👨‍👩‍👧‍👦 Thế hệ: {person.gen}
                             </Typography>
                             <Typography variant="body2">
-                              Ngày sinh: {person.dob}
+                              &#x1F382; Ngày sinh: {person.dob}
                             </Typography>
                             <Typography variant="body2">
-                              Ngày bổn mạng: {person.patronDate}
+                              &#128124; Ngày bổn mạng: {person.patronDate}
                             </Typography>
                             {person.marriageDate && (
                               <Typography variant="body2">
-                                {person.id === 3 || person.id === 9
+                                &#128140; {person.id === 3 || person.id === 9
                                   ? "Ngày thụ phong linh mục"
                                   : "Ngày cưới"}
                                 : {person.marriageDate}
                               </Typography>
                             )}
-                            {person.specialInfo && (
-                              <Typography variant="body2">
-                                {person.id === 3 || person.id === 9
-                                  ? "Châm ngôn đời linh mục"
-                                  : person.specialInfo}
-                                :{" "}
-                                {person.id === 3 || person.id === 9
-                                  ? person.specialInfo
-                                  : person.specialDate}
-                              </Typography>
-                            )}
-                            {person.specialInfo1 && (
-                              <Typography variant="body2">
-                                {person.id === 3
-                                  ? "Châm ngôn đời giám mục"
-                                  : person.specialInfo1}
-                                :{" "}
-                                {person.id === 3
-                                  ? person.specialInfo1
-                                  : person.specialDate1}
-                              </Typography>
-                            )}
-                            {person.specialInfo2 && (
-                              <Typography variant="body2">
-                                {person.specialInfo2}: {person.specialDate2}
-                              </Typography>
-                            )}
+                            {person.id !== 3 &&
+                              person.id !== 9 &&
+                              person.specialInfo && (
+                                <Typography variant="body2">
+                                  &#10013; {person.specialInfo}:{" "}
+                                  {person.specialDate}
+                                </Typography>
+                              )}
+                            {person.id !== 3 &&
+                              person.id !== 9 &&
+                              person.specialInfo1 && (
+                                <Typography variant="body2">
+                                  {person.specialInfo1}: {person.specialDate1}
+                                </Typography>
+                              )}
+                            {person.id !== 3 &&
+                              person.id !== 9 &&
+                              person.specialInfo2 && (
+                                <Typography variant="body2">
+                                  {person.specialInfo2}: {person.specialDate2}
+                                </Typography>
+                              )}
                           </Box>
                         </ListItem>
                       </Grid>
